@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stansted Flight Planner · PMDG 737-800</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#E7EAEF; --card:#FFF; --ink:#101E38; --ink-soft:#55637C;
+    --rule:#C9D0DA; --navy:#152A57; --yellow:#F5C518;
+    --green:#1E7A44; --warn:#B23A2E; --fma:#5FE06A;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--paper);color:var(--ink);
+    font-family:"Barlow",system-ui,-apple-system,sans-serif;font-size:17px;line-height:1.55}
+  .wrap{max-width:780px;margin:0 auto;padding:0 16px 90px}
+
+  header.mast{background:var(--navy);color:#fff;border-bottom:6px solid var(--yellow);
+    position:sticky;top:0;z-index:20}
+  .mast-inner{max-width:780px;margin:0 auto;padding:16px}
+  .tail{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.18em;
+    color:var(--yellow);text-transform:uppercase}
+  .routebar{display:flex;align-items:baseline;gap:10px;margin-top:4px}
+  .routebar b{font-family:"Barlow Condensed",sans-serif;font-weight:700;
+    font-size:clamp(26px,7vw,38px);line-height:1}
+  .routebar .arw{color:var(--yellow);font-size:22px}
+  .routebar .meta{margin-left:auto;font-family:"IBM Plex Mono",monospace;
+    font-size:11px;color:#B9C6DE;text-align:right;line-height:1.5}
+
+  .picker{background:var(--card);border:1px solid var(--rule);border-radius:4px;
+    padding:14px;margin:18px 0}
+  .picker .row{display:grid;grid-template-columns:1fr;gap:12px}
+  @media(min-width:560px){.picker .row{grid-template-columns:1fr 1fr}}
+  label.fld{display:block;font-family:"IBM Plex Mono",monospace;font-size:10.5px;
+    letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:5px}
+  select,input{width:100%;padding:11px 10px;font-size:16px;font-family:"Barlow",sans-serif;
+    border:1px solid var(--rule);border-radius:3px;background:#fff;color:var(--ink)}
+  .subrow{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+
+  section{margin:34px 0 0}
+  .eyebrow{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--ink-soft);border-bottom:1px solid var(--rule);
+    padding-bottom:6px;margin-bottom:14px}
+  h2{font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:29px;
+    line-height:1.1;margin:0 0 6px}
+  h3{font-family:"Barlow Condensed",sans-serif;font-weight:600;font-size:20px;margin:24px 0 6px}
+  p{margin:0 0 12px}
+  strong{font-weight:600}
+  .soft{color:var(--ink-soft)}
+
+  .facts{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--rule);
+    border:1px solid var(--rule);border-radius:3px;overflow:hidden}
+  @media(min-width:560px){.facts{grid-template-columns:repeat(4,1fr)}}
+  .fact{background:var(--card);padding:11px 12px}
+  .fact dt{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.13em;
+    text-transform:uppercase;color:var(--ink-soft);margin:0 0 3px}
+  .fact dd{margin:0;font-family:"Barlow Condensed",sans-serif;font-weight:600;
+    font-size:22px;line-height:1.1}
+  .fact dd small{display:block;font-family:"Barlow",sans-serif;font-weight:400;
+    font-size:12.5px;color:var(--ink-soft)}
+
+  ol.steps{list-style:none;margin:14px 0;padding:0;counter-reset:s}
+  ol.steps>li{counter-increment:s;position:relative;padding:0 0 15px 42px;
+    border-left:1px solid var(--rule);margin-left:13px}
+  ol.steps>li:last-child{border-left-color:transparent}
+  ol.steps>li::before{content:counter(s);position:absolute;left:-13px;top:0;
+    width:26px;height:26px;border-radius:50%;background:var(--navy);color:#fff;
+    font-family:"IBM Plex Mono",monospace;font-size:12px;
+    display:flex;align-items:center;justify-content:center}
+
+  .key{display:inline-block;font-family:"IBM Plex Mono",monospace;font-size:12.5px;
+    font-weight:500;background:var(--navy);color:#fff;padding:2px 7px;border-radius:3px;
+    white-space:nowrap}
+  .where{display:inline-block;font-family:"IBM Plex Mono",monospace;font-size:10.5px;
+    letter-spacing:.06em;text-transform:uppercase;background:#DDE3EC;color:var(--navy);
+    padding:2px 6px;border-radius:3px;border:1px solid var(--rule);white-space:nowrap}
+  .val{font-family:"IBM Plex Mono",monospace;font-weight:500;background:#FFF4CC;
+    padding:1px 6px;border-radius:3px;border:1px solid #E8D48A}
+  .fma-tag{display:inline-block;font-family:"IBM Plex Mono",monospace;font-size:12.5px;
+    background:#12180F;color:var(--fma);padding:2px 7px;border-radius:3px;white-space:nowrap}
+  .fma-tag.w{color:#F2F5F0}
+
+  .note,.watch{border-left:4px solid var(--navy);background:var(--card);
+    padding:12px 14px;margin:16px 0;font-size:15.5px}
+  .watch{border-left-color:var(--warn)}
+  .note .lbl,.watch .lbl{font-family:"IBM Plex Mono",monospace;font-size:10.5px;
+    letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft);display:block;margin-bottom:4px}
+  .watch .lbl{color:var(--warn)}
+
+  .check{background:var(--card);border:1px solid var(--rule);padding:4px 14px;
+    border-radius:3px;margin:14px 0}
+  .check .ttl{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--ink-soft);padding:12px 0 4px;border-bottom:1px solid var(--rule)}
+  .check label{display:flex;gap:11px;align-items:flex-start;padding:10px 0;
+    border-bottom:1px solid var(--rule);font-size:16px;cursor:pointer}
+  .check label:last-child{border-bottom:0}
+  .check input{margin-top:5px;width:17px;height:17px;accent-color:var(--navy);flex:none}
+  .check .txt{flex:1;min-width:0}
+  .check .txt small{display:block;font-size:13px;color:var(--ink-soft);line-height:1.4;margin-top:2px}
+  .check input:checked + .txt{color:var(--ink-soft);text-decoration:line-through}
+  .check input:checked + .txt small{text-decoration:none}
+  .check .set{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--navy);
+    white-space:nowrap;padding-left:8px;flex:none;padding-top:3px}
+
+  table.tbl{width:100%;border-collapse:collapse;background:var(--card);font-size:15px;margin:12px 0}
+  .tbl th,.tbl td{border:1px solid var(--rule);padding:9px 10px;text-align:left;vertical-align:top}
+  .tbl th{font-family:"IBM Plex Mono",monospace;font-weight:500;font-size:10.5px;
+    letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft);background:#F2F4F8}
+  .tbl td.m{font-family:"IBM Plex Mono",monospace;font-weight:500;white-space:nowrap}
+  .tbl tr.best td{background:#FFF9E3}
+
+  .fma-strip{background:#12180F;border-radius:4px;display:grid;grid-template-columns:repeat(3,1fr);
+    font-family:"IBM Plex Mono",monospace;font-size:13px;text-align:center;overflow:hidden;margin:14px 0}
+  .fma-strip div{padding:11px 4px;border-right:1px solid #2C3626;color:var(--fma)}
+  .fma-strip div:last-child{border-right:0}
+  .fma-strip div.armed{color:#F2F5F0}
+  .fma-strip div small{display:block;font-size:9px;color:#6E7F72;letter-spacing:.1em;margin-top:4px}
+
+  .mcp{background:#2A2F33;border-radius:6px;padding:12px;display:grid;
+    grid-template-columns:repeat(2,1fr);gap:10px;margin:14px 0}
+  @media(min-width:520px){.mcp{grid-template-columns:repeat(4,1fr)}}
+  .mcp .win{background:#0D1114;border-radius:3px;padding:8px 6px;text-align:center}
+  .mcp .win em{display:block;font-style:normal;font-family:"IBM Plex Mono",monospace;
+    font-size:8.5px;letter-spacing:.12em;color:#7C8A93;margin-bottom:4px}
+  .mcp .win b{font-family:"IBM Plex Mono",monospace;font-size:19px;color:#F0F4F2;font-weight:500}
+
+  .metar{background:#0B1210;border-radius:4px;padding:12px;margin:14px 0 6px;
+    font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:2;
+    color:#8FE388;overflow-x:auto;white-space:nowrap}
+  .metar .hl{background:var(--yellow);color:#0B1210;padding:3px 5px;border-radius:3px}
+
+  footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--rule);
+    font-size:13.5px;color:var(--ink-soft)}
+  @media print{
+    body{background:#fff}
+    header.mast{position:static;background:#fff;color:#000;border-bottom:3px solid #000}
+    .tail,.routebar .meta{color:#333}
+    ol.steps>li::before{background:#000}
+    .fma-strip,.mcp,.metar{background:#fff;border:1px solid #000;color:#000}
+    .fma-strip div,.mcp .win b{color:#000}
+    .picker{display:none}
+    section{break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+
+<header class="mast">
+  <div class="mast-inner">
+    <div class="tail">PMDG 737-800 · SimBrief · MSFS 2024 · Xbox</div>
+    <div class="routebar">
+      <b id="hDep">EGSS</b><span class="arw">→</span><b id="hArr">EIDW</b>
+      <span class="meta" id="hMeta"></span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="picker">
+    <div class="row">
+      <div>
+        <label class="fld" for="dep">Departure</label>
+        <select id="dep"></select>
+      </div>
+      <div>
+        <label class="fld" for="arr">Arrival</label>
+        <select id="arr"></select>
+      </div>
+    </div>
+    <div class="subrow">
+      <div>
+        <label class="fld" for="wdep">Dep wind (e.g. 240/12)</label>
+        <input id="wdep" placeholder="240/12" autocomplete="off">
+      </div>
+      <div>
+        <label class="fld" for="warr">Arr wind (e.g. 280/15)</label>
+        <input id="warr" placeholder="280/15" autocomplete="off">
+      </div>
+    </div>
+    <p class="soft" style="margin:12px 0 0;font-size:14px">
+      Winds are optional — enter them from the METAR and the runway tables below will rank
+      themselves. Everything else updates the moment you pick airports.
+    </p>
+  </div>
+
+  <!-- ROUTE SUMMARY -->
+  <section>
+    <div class="eyebrow">Route</div>
+    <h2 id="rTitle">Route summary</h2>
+    <dl class="facts" id="rFacts"></dl>
+    <p class="soft" id="rNote" style="margin-top:12px"></p>
+  </section>
+
+  <!-- RUNWAYS -->
+  <section>
+    <div class="eyebrow">Runways</div>
+    <h2>Which runway</h2>
+    <h3 id="depRwyH"></h3>
+    <table class="tbl" id="depRwyT"></table>
+    <h3 id="arrRwyH"></h3>
+    <table class="tbl" id="arrRwyT"></table>
+    <div class="note">
+      <span class="lbl">How to read it</span>
+      Headwind component is what matters. Positive is good, negative means a tailwind and
+      you'd normally use the other end. Without a wind entered these are just listed;
+      type the wind from the METAR and the best option highlights itself.
+    </div>
+  </section>
+
+  <!-- WEATHER -->
+  <section>
+    <div class="eyebrow">Before anything else</div>
+    <h2>Getting the weather</h2>
+    <p>You need it twice — departure now, destination in the cruise. Three sources:</p>
+    <ol class="steps">
+      <li><strong>The tablet.</strong> Weather or METAR app, type the ICAO, done.</li>
+      <li><strong>Your SimBrief OFP.</strong> METAR and TAF for both airports printed at the bottom. Ages, but fine for planning.</li>
+      <li><strong>ATIS on the radio.</strong> MSFS shows you the frequency when you select the airport.</li>
+    </ol>
+    <h3>How to read one <span class="where">Example only</span></h3>
+    <p class="soft">This is a made-up sample to show you the format. <strong>The numbers below are not
+    live</strong> — this file has no weather feed. Get the real report from the tablet, your OFP,
+    or the ATIS, then type its wind into the box at the top of the page.</p>
+    <div class="metar">
+      <span id="mtIcao">EIDW</span> 241650Z <span class="hl">05008KT</span> CAVOK 21/10 <span class="hl">Q1019</span>
+    </div>
+    <table class="tbl">
+      <tr><td class="m">05008KT</td><td><strong>Wind from 050° at 8 knots.</strong> First three digits are the direction, last two the speed. Type your real one into the box at the top as <span class="m">050/08</span>.</td></tr>
+      <tr><td class="m">Q1019</td><td><strong>QNH 1019 hectopascals.</strong> This is your altimeter setting. Typically 980–1040 — if the real report reads Q1002, you dial 1002.</td></tr>
+      <tr><td class="m">CAVOK</td><td>Nothing to worry about. If it reads something like <em>3000 BKN008</em>, that's 3 km visibility and broken cloud at 800 ft.</td></tr>
+    </table>
+    <p class="soft">Two numbers matter: the wind picks your runway, the Q number goes in the altimeter. Everything else is background.</p>
+  </section>
+
+  <!-- SIMBRIEF -->
+  <section>
+    <div class="eyebrow">Stage 01</div>
+    <h2>SimBrief</h2>
+    <ol class="steps">
+      <li><strong>Aircraft type B738.</strong> Not B737, not B38M.</li>
+      <li><strong>Route</strong> <span class="val" id="sbRoute">EGSS → EIDW</span>. Leave alternate blank and let SimBrief pick.</li>
+      <li><strong>Tick "Detailed Navlog".</strong> Without it the route arrives <strong>red</strong> in the FMC and won't load. Most common failure there is.</li>
+      <li><strong>Cruise level</strong> — SimBrief will suggest one. For this sector <span class="val" id="sbFL">FL300</span> is realistic. If SimBrief picks much higher on a short leg, lower it, or the FMC throws <strong>UNABLE CRZ ALT</strong> and VNAV drops out.</li>
+      <li><strong>Cost index</strong> — Ryanair run about 6, Jet2 similar. SimBrief's default is higher.</li>
+      <li><strong>Press Generate OFP.</strong> The aircraft pulls the most recently <em>generated</em> plan, not a saved draft.</li>
+      <li><strong>Note your SimBrief username</strong> — the login name, not the 6-digit Pilot ID.</li>
+    </ol>
+    <h3>Numbers to keep in front of you</h3>
+    <table class="tbl">
+      <tr><th>Number</th><th>Where</th><th>Used for</th></tr>
+      <tr><td class="m">ZFW</td><td>Weights section</td><td>PERF INIT</td></tr>
+      <tr><td class="m">Block fuel</td><td>Fuel section</td><td>Cross-check the gauges</td></tr>
+      <tr><td class="m">Cost index</td><td>OFP header</td><td>PERF INIT</td></tr>
+      <tr><td class="m">Cruise level</td><td>OFP header</td><td>PERF INIT + pressurisation</td></tr>
+      <tr><td class="m">CG / trim</td><td>Weight &amp; balance</td><td>TAKEOFF REF</td></tr>
+      <tr><td class="m">SID / STAR</td><td>Top of the navlog</td><td>DEP/ARR page</td></tr>
+    </table>
+  </section>
+
+  <!-- COLD DARK -->
+  <section>
+    <div class="eyebrow">Stage 02</div>
+    <h2>Cold and dark — powering up</h2>
+    <p class="soft">Load at a stand, not a runway. Any remote or terminal stand works; the sim doesn't care which, and pushback works from all of them.</p>
+    <ol class="steps">
+      <li><strong>Battery ON</strong> <span class="where">Overhead</span> — bottom left, electrical panel. Screens flicker into life.</li>
+      <li><strong>Standby power to AUTO</strong> <span class="where">Overhead</span>.</li>
+      <li><strong>Connect the GPU</strong> from the tablet's ground services, or go straight to the APU.</li>
+      <li><strong>APU:</strong> switch to START, hold, release to ON. Wait for the APU GEN light. Then <strong>APU GEN 1 and 2 ON</strong>.</li>
+      <li><strong>Fuel pumps ON</strong> <span class="where">Overhead</span> — all six, unless the centre tank is empty in which case leave the centre pair off.</li>
+      <li><strong>Packs AUTO, bleeds ON, isolation valve AUTO</strong> <span class="where">Overhead</span>.</li>
+      <li><strong>Nav and logo lights ON</strong>, cockpit lighting to taste.</li>
+      <li><strong>IRS alignment:</strong> both IRS switches to NAV <span class="where">Overhead</span>. It takes several minutes — start it early and do the FMC while it aligns.</li>
+    </ol>
+    <div class="note">
+      <span class="lbl">Order that saves time</span>
+      Power, IRS to NAV, then straight to the tablet and the FMC. The alignment runs in the
+      background while you're programming, so it's finished by the time you need it.
+    </div>
+  </section>
+
+  <!-- TABLET -->
+  <section>
+    <div class="eyebrow">Stage 03</div>
+    <h2>Tablet</h2>
+    <p>It's on the <strong>left sidewall</strong> by the captain's seat. Runs on its own battery, so it works before you have power.</p>
+    <ol class="steps">
+      <li><strong>First time only:</strong> settings/gear icon → enter your SimBrief <strong>username</strong>.</li>
+      <li><strong>Request New Data from SimBrief.</strong> Takes 10–20 seconds — it's simulating a datalink.</li>
+      <li><strong>Weight and Balance page → Request Weights.</strong> This loads passengers and cargo.</li>
+      <li><strong>Load the fuel</strong> from the same page. Then check the gauges actually moved.</li>
+      <li><strong>Note the CG figure</strong> off that page. You'll need it on TAKEOFF REF.</li>
+    </ol>
+    <div class="watch">
+      <span class="lbl">Don't</span>
+      Never touch the MSFS weight &amp; balance menu once the tablet has loaded. The two systems
+      don't talk and you'll end up with the FMC and the aircraft disagreeing about your weight.
+    </div>
+    <p class="soft"><strong>EZFW vs ZFW won't match</strong> — that's normal. EZFW is SimBrief's estimate, ZFW is the actual. Use the actual in the FMC.</p>
+  </section>
+
+  <!-- FMC -->
+  <section>
+    <div class="eyebrow">Stage 04</div>
+    <h2>Programming the FMC</h2>
+
+    <h3>4a · IDENT</h3>
+    <p><span class="key">INIT REF</span>. Check it says 737-800, note the AIRAC date. <strong>ROUTE</strong> at 6R.</p>
+
+    <h3>4b · RTE</h3>
+    <ol class="steps">
+      <li>Origin <span class="val" id="fmcDep">EGSS</span> at 1L, destination <span class="val" id="fmcArr">EIDW</span> at 1R.</li>
+      <li><strong>FLT NO</strong> at 2R — your flight number, e.g. <span class="val" id="fmcFlt">FR202</span>.</li>
+      <li><strong>Route request prompt</strong> at 6R. Pick the SimBrief route — it should be <strong>green</strong>. Red means Detailed Navlog wasn't ticked.</li>
+      <li><strong>LOAD</strong>, then <strong>ACTIVATE</strong>, then <span class="key">EXEC</span>.</li>
+      <li>Press <span class="key">NEXT PAGE</span> to see RTE 2 — that's your VIA/TO airways, filled in by the uplink. You never type these.</li>
+    </ol>
+
+    <h3>4c · DEP/ARR — the only manual part</h3>
+    <p>Press <span class="key">DEP ARR</span>. Departure and arrival procedures aren't in the route file because ATC assigns them on the day.</p>
+    <ol class="steps">
+      <li><strong>DEP:</strong> pick your runway first, then the SID. Which SID? It's on your SimBrief navlog, first line. Match the name.</li>
+      <li><strong>ARR:</strong> pick the STAR from your navlog, then the ILS for your landing runway, then a transition if one is offered.</li>
+      <li><strong>Names may differ by a digit.</strong> Your OFP might say BAGS4L and the FMC offers BAGS3L. Same procedure, different AIRAC. Take what the FMC has.</li>
+      <li><span class="key">EXEC</span> after each change.</li>
+    </ol>
+
+    <h3>4d · LEGS — clean up</h3>
+    <ol class="steps">
+      <li><strong>Discontinuities</strong> — a line of boxes. Press the LSK next to the waypoint <em>below</em> the gap, then the LSK on the boxes. Gap closes. <span class="key">EXEC</span>.</li>
+      <li><strong>Silly distances.</strong> Your total is <span class="val" id="legChk">240 nm</span>, so a 3,000 nm leg means a duplicate waypoint on the wrong continent.</li>
+      <li><strong>Altitude constraints</strong> in small font next to waypoints are legitimate — they come from the SID and STAR. Leave them.</li>
+    </ol>
+
+    <h3>4e · PERF INIT</h3>
+    <p><span class="key">INIT REF</span> → <strong>PERF INIT REQUEST</strong>, or type it in.</p>
+    <table class="tbl">
+      <tr><th>Field</th><th>Enter</th></tr>
+      <tr><td class="m">ZFW</td><td>The actual figure from Weight and Balance</td></tr>
+      <tr><td class="m">FUEL</td><td>Leave it — reads from the tanks</td></tr>
+      <tr><td class="m">RESERVES</td><td>From the OFP. Don't leave it at zero or the fuel predictions mean nothing</td></tr>
+      <tr><td class="m">COST INDEX</td><td>6 for Ryanair-realistic</td></tr>
+      <tr><td class="m">CRZ ALT</td><td><span class="val" id="perfFL">FL300</span> — <strong>five digits or FL-prefixed</strong>. Typing 300 means 300 feet</td></tr>
+    </table>
+    <div class="watch">
+      <span class="lbl">UNABLE CRZ ALT</span>
+      If this appears, the FMC can't build a profile at that level for this distance and weight.
+      <strong>Lower the cruise altitude</strong> and re-EXEC. Ignore it and VNAV drops out — which
+      takes LNAV with it and leaves you hand-flying with no descent planning.
+    </div>
+
+    <h3>4f · N1 LIMIT</h3>
+    <p>Accept the default, or pick 26K/24K for a reduced-thrust takeoff. Normal on a light short sector. <strong>TAKEOFF</strong> at 6R.</p>
+
+    <h3>4g · TAKEOFF REF</h3>
+    <ol class="steps">
+      <li><strong>FLAPS</strong> — type <span class="key">5</span>. Standard 737-800 setting.</li>
+      <li><strong>CG</strong> — from the tablet's Weight and Balance page.</li>
+      <li><strong>Only then</strong> do V1, VR and V2 appear on the right in small font. Press each LSK to accept. They go large.</li>
+    </ol>
+    <p class="soft">V-speeds blank? Flaps and CG aren't in. Every single time, no other cause.</p>
+  </section>
+
+  <!-- MCP -->
+  <section>
+    <div class="eyebrow">Stage 05</div>
+    <h2>Cockpit setup</h2>
+
+    <h3>Altimeters <span class="where">Glareshield</span></h3>
+    <p>EFIS control panel at each outboard end. <strong>BARO knob</strong> with <strong>STD</strong> button in the middle. Press toggles standard; <strong>turn</strong> sets the value.</p>
+    <ol class="steps">
+      <li><strong>Check units are hPa</strong>, not inches. There's an IN/HPA selector on the same panel.</li>
+      <li><strong>Set the departure QNH</strong> from the METAR Q number.</li>
+      <li><strong>Both sides plus the standby altimeter</strong> <span class="where">Forward panel</span>, the small round dial centre panel.</li>
+      <li><strong>Sanity check:</strong> on the ground you should read about <span class="val" id="depElev">348 ft</span>. Wildly different means the setting is wrong.</li>
+    </ol>
+
+    <h3>Pressurisation <span class="where">Overhead</span></h3>
+    <ul>
+      <li>Mode selector <strong>AUTO</strong></li>
+      <li><strong>FLT ALT</strong> — <span class="val" id="pressFL">30000</span>, your cruise altitude in feet</li>
+      <li><strong>LAND ALT</strong> — <span class="val" id="pressLand">250</span>, destination elevation to the nearest 50</li>
+    </ul>
+
+    <h3>Minimums <span class="where">Glareshield</span></h3>
+    <p>Same EFIS panel, <strong>MINS</strong> knob with RADIO/BARO selector. Set <strong>BARO</strong> and dial <span class="val" id="minsVal">450</span> — roughly 200 ft above destination elevation, the standard ILS decision height.</p>
+
+    <h3>MCP <span class="where">Glareshield</span></h3>
+    <div class="mcp">
+      <div class="win"><em>Course</em><b id="mcpCrs">284</b></div>
+      <div class="win"><em>IAS/Mach</em><b>150</b></div>
+      <div class="win"><em>Heading</em><b id="mcpHdg">221</b></div>
+      <div class="win"><em>Altitude</em><b id="mcpAlt">06000</b></div>
+    </div>
+    <ol class="steps">
+      <li><strong>Altitude</strong> — initial climb clearance, typically 6000 in the UK. Not cruise level.</li>
+      <li><strong>Heading</strong> — runway heading as a backup if LNAV drops.</li>
+      <li><strong>Speed</strong> — V2 from TAKEOFF REF.</li>
+      <li><strong>Course</strong> — irrelevant for takeoff. You'll set the arrival ILS course in the cruise.</li>
+      <li><strong>A/T ARM switch UP</strong> — far left of the MCP. Without it TO/GA does nothing at all.</li>
+      <li><strong>Both F/D switches ON</strong>, then press <strong>LNAV</strong> and <strong>VNAV</strong>. They go white on the FMA.</li>
+    </ol>
+
+    <h3>The rest</h3>
+    <ul>
+      <li><strong>Autobrake RTO</strong> <span class="where">Forward panel</span></li>
+      <li><strong>Speedbrake DOWN</strong> <span class="where">Pedestal</span> — not armed for takeoff</li>
+      <li><strong>Trim</strong> to the TAKEOFF REF figure, read on the scale beside the trim wheels</li>
+      <li><strong>Flaps 5</strong> — the actual lever</li>
+    </ul>
+  </section>
+
+  <!-- CHECKLISTS -->
+  <section>
+    <div class="eyebrow">Stage 06</div>
+    <h2>Start, taxi, takeoff</h2>
+    <ol class="steps">
+      <li><strong>Beacon ON</strong> before anything turns.</li>
+      <li><strong>Packs OFF, APU bleed ON.</strong> Engines and packs want the same air and there isn't enough for both.</li>
+      <li><strong>Engine 2 first:</strong> start switch to GRD. At <strong>25% N2</strong>, start lever to IDLE. Fuel flow, then N1, then EGT.</li>
+      <li><strong>Then engine 1.</strong></li>
+      <li><strong>After both:</strong> generators on, APU bleed off, APU off, packs AUTO, probe heat on.</li>
+      <li><strong>Flight controls</strong> full travel both ways.</li>
+    </ol>
+
+    <div class="check">
+      <div class="ttl">Before Taxi</div>
+      <label><input type="checkbox"><span class="txt">Generators<small>Overhead, electrical</small></span><span class="set">ON</span></label>
+      <label><input type="checkbox"><span class="txt">Probe heat<small>Overhead, anti-ice</small></span><span class="set">ON</span></label>
+      <label><input type="checkbox"><span class="txt">Isolation valve<small>Overhead, air con</small></span><span class="set">AUTO</span></label>
+      <label><input type="checkbox"><span class="txt">Start switches<small>GRD to CONT after start</small></span><span class="set">CONT</span></label>
+      <label><input type="checkbox"><span class="txt">Recall<small>Press master caution — lights every annunciator so you can spot amber. Press again to clear.</small></span><span class="set">CHECKED</span></label>
+      <label><input type="checkbox"><span class="txt">Autobrake</span><span class="set">RTO</span></label>
+      <label><input type="checkbox"><span class="txt">Altimeters<small id="ckAlt">Both EFIS + standby, departure QNH. Reads about 348 ft on stand.</small></span><span class="set">SET</span></label>
+    </div>
+
+    <div class="check">
+      <div class="ttl">Before Takeoff</div>
+      <label><input type="checkbox"><span class="txt">Flaps<small>Lever and green light agree</small></span><span class="set">5</span></label>
+      <label><input type="checkbox"><span class="txt">Stabilizer trim<small>Matches TAKEOFF REF</small></span><span class="set">UNITS</span></label>
+      <label><input type="checkbox"><span class="txt">Transponder<small>Pedestal, aft</small></span><span class="set">TA/RA</span></label>
+      <label><input type="checkbox"><span class="txt">Strobes and landing lights</span><span class="set">ON</span></label>
+      <label><input type="checkbox"><span class="txt">A/T ARM<small>Far left of MCP — the one everyone forgets</small></span><span class="set">ARMED</span></label>
+      <label><input type="checkbox"><span class="txt">Both flight directors</span><span class="set">ON</span></label>
+      <label><input type="checkbox"><span class="txt">LNAV and VNAV<small>White on the FMA</small></span><span class="set">ARMED</span></label>
+      <label><input type="checkbox"><span class="txt">MCP altitude<small>Initial climb, not cruise</small></span><span class="set">06000</span></label>
+      <label><input type="checkbox"><span class="txt">Speedbrake</span><span class="set">DOWN</span></label>
+    </div>
+
+    <h3>The roll</h3>
+    <ol class="steps">
+      <li><strong>Lined up, brakes released.</strong> Advance to about 40% N1 and pause — both engines stable and matched.</li>
+      <li><strong>Press TO/GA</strong> — the buttons on the front face of the thrust levers, where your thumb sits.</li>
+      <li><strong>Hand stays on the levers</strong> until V1.</li>
+      <li><strong>V1</strong> — hand off. <strong>VR</strong> — rotate to 15°.</li>
+      <li><strong>Positive rate — gear up.</strong></li>
+      <li><strong>400 ft minimum</strong> for the autopilot. <span class="key">CMD A</span>. 1,000 ft is more comfortable.</li>
+      <li><strong>LNAV engages at 50 ft, VNAV at 400 ft.</strong> Watch them go green.</li>
+    </ol>
+
+    <div class="fma-strip">
+      <div>N1<small>Autothrottle</small></div>
+      <div>LNAV<small>Roll</small></div>
+      <div>VNAV SPD<small>Pitch</small></div>
+    </div>
+
+    <div class="check">
+      <div class="ttl">After Takeoff</div>
+      <label><input type="checkbox"><span class="txt">Engine bleeds</span><span class="set">ON</span></label>
+      <label><input type="checkbox"><span class="txt">Packs</span><span class="set">AUTO</span></label>
+      <label><input type="checkbox"><span class="txt">Landing gear<small>Up, then lever to OFF</small></span><span class="set">UP &amp; OFF</span></label>
+      <label><input type="checkbox"><span class="txt">Flaps<small>Up on the speed schedule</small></span><span class="set">UP</span></label>
+    </div>
+  </section>
+
+  <!-- CLIMB -->
+  <section>
+    <div class="eyebrow">Stage 07</div>
+    <h2>Climb</h2>
+    <ol class="steps">
+      <li><strong>Wind the MCP altitude up</strong> as you approach each level, eventually to <span class="val" id="climbTo">30000</span>.</li>
+      <li><strong>At the transition altitude</strong> — <span class="val" id="depTA">6,000 ft in the UK</span> — press <strong>STD</strong> on both EFIS panels and set 1013 on the standby.</li>
+      <li><strong>Passing 10,000 ft</strong> — landing lights off. VNAV releases the 250 kt limit itself.</li>
+    </ol>
+    <div class="note">
+      <span class="lbl">If VNAV won't climb</span>
+      Check the FMA. <span class="fma-tag">ALT</span> green means you've hit the MCP altitude — wind it up.
+      If VNAV has dropped out entirely, press <span class="key">LVL CHG</span> with about 280 in the speed
+      window and climb manually. LNAV keeps flying the route regardless.
+    </div>
+  </section>
+
+  <!-- DESCENT -->
+  <section>
+    <div class="eyebrow">Stage 08</div>
+    <h2>Descent — the bit that catches people</h2>
+
+    <h3>The 3:1 rule</h3>
+    <p><strong>Altitude in thousands × 3 = miles needed.</strong> Add about 10 miles for slowing down. From <span class="val" id="d31FL">FL300</span> that's <span class="val" id="d31NM">100 nm</span>.</p>
+    <p class="soft">Run this in your head every few minutes in the cruise. When it disagrees with the FMC, trust the arithmetic and start down.</p>
+
+    <h3>Your descent profile</h3>
+    <table class="tbl" id="desTable"></table>
+
+    <ol class="steps">
+      <li><strong>About 10 minutes before top of descent,</strong> do the whole arrival prep in one block: destination METAR, load the approach on DEP/ARR, set the MCP course, autobrake to 2, get your VREF.</li>
+      <li><strong>Then wind the MCP altitude down to 3,000</strong> — last action, and your cue that everything else is done.</li>
+      <li><strong>VNAV starts the descent itself</strong> at top of descent. You press nothing. Watch for the thrust coming back and the nose lowering.</li>
+      <li><strong>If nothing happens</strong>, VNAV isn't engaged. Press <span class="key">LVL CHG</span>, 280 in the speed window, and fly the table above manually.</li>
+      <li><strong>Descending through the transition level</strong>, press STD off and set the destination QNH — both sides and the standby.</li>
+      <li><strong>Passing 10,000</strong> — landing lights on, slow to 250.</li>
+    </ol>
+
+    <div class="watch">
+      <span class="lbl">The trap</span>
+      <strong>TO T/D changing to TO E/O</strong> on the PROGRESS page means the FMC no longer has a
+      descent point ahead of you. Nothing will start a descent automatically. Go to LVL CHG
+      immediately and fly the table.
+    </div>
+  </section>
+
+  <!-- APPROACH -->
+  <section>
+    <div class="eyebrow">Stage 09</div>
+    <h2>Approach</h2>
+
+    <h3>Setup, done in the cruise</h3>
+    <ol class="steps">
+      <li><strong>Destination METAR</strong> — wind for the runway, Q number for the altimeter.</li>
+      <li><strong>DEP ARR → ARR</strong> → STAR, then the ILS for your runway, then a transition if offered. <span class="key">EXEC</span>.</li>
+      <li><strong>LEGS check</strong> for gaps where the STAR meets the approach.</li>
+      <li><strong>NAV RAD</strong> — confirm the ILS frequency and course auto-tuned. If blank, type them in. A blank NAV RAD page is a silent failure: APP will do nothing and there's no warning.</li>
+      <li><strong>MCP course</strong> to the runway inbound — about <span class="val" id="appCrs">284</span>.</li>
+      <li><strong>APPROACH REF</strong> — select the flaps 30 VREF. Around 140 kt at typical landing weight. Fly VREF+5.</li>
+      <li><strong>Autobrake 2</strong>, landing altitude confirmed.</li>
+    </ol>
+
+    <h3>Intercepting</h3>
+    <p>Three conditions before <span class="key">APP</span>:</p>
+    <ol class="steps">
+      <li><strong>Level at 3,000 by 15 nm.</strong> Give yourself margin — 12 nm is tight.</li>
+      <li><strong>At or below the glideslope.</strong> The 737 cannot capture from above. Fly level and let the beam come down to you.</li>
+      <li><strong>Roughly aligned</strong>, within about 30° of the runway course.</li>
+    </ol>
+    <div class="fma-strip">
+      <div>SPD<small>Autothrottle</small></div>
+      <div class="armed">VOR/LOC<small>Armed</small></div>
+      <div class="armed">G/S<small>Armed</small></div>
+    </div>
+    <p><strong>Watch the FMA, not the runway.</strong> If G/S never goes white, APP didn't take and you will fly straight over the top.</p>
+    <p>Once G/S is <strong>green</strong>, set the go-around altitude — 3,000. Not before; it breaks the capture.</p>
+
+    <h3>Configuring</h3>
+    <table class="tbl">
+      <tr><th>Distance</th><th>Speed</th><th>Action</th></tr>
+      <tr><td class="m">15 nm</td><td class="m">210</td><td>Flaps 1</td></tr>
+      <tr><td class="m">12 nm</td><td class="m">190</td><td>Flaps 5</td></tr>
+      <tr><td class="m">10 nm</td><td class="m">180</td><td>Flaps 10</td></tr>
+      <tr><td class="m">8 nm</td><td class="m">170</td><td><strong>Gear down · Flaps 15 · Speedbrake ARMED</strong></td></tr>
+      <tr><td class="m">6 nm</td><td class="m">160</td><td>Flaps 25</td></tr>
+      <tr><td class="m">5 nm</td><td class="m">VREF+5</td><td>Flaps 30 · set final speed</td></tr>
+    </table>
+    <p class="soft"><strong>Speed first, then flaps.</strong> Set the speed, wait for the aircraft to slow, then move the lever. And you can't slow down and descend at the same time — that's why being level at 3,000 early matters so much.</p>
+    <p><strong>Gear at 8 nm is your anchor.</strong> Late gear is the single most common reason approaches arrive too fast.</p>
+
+    <div class="check">
+      <div class="ttl">Landing</div>
+      <label><input type="checkbox"><span class="txt">Speedbrake<small>Back to the ARM detent — not deployed. It fires automatically on touchdown.</small></span><span class="set">ARMED</span></label>
+      <label><input type="checkbox"><span class="txt">Landing gear<small>Three greens</small></span><span class="set">DOWN</span></label>
+      <label><input type="checkbox"><span class="txt">Flaps<small>Green light</small></span><span class="set">30</span></label>
+    </div>
+    <p><strong>Stabilised by 1,000 ft:</strong> on speed, on path, configured, spooled. If not — go around.</p>
+  </section>
+
+  <!-- LANDING -->
+  <section>
+    <div class="eyebrow">Stage 10</div>
+    <h2>Landing</h2>
+    <h3>Autoland</h3>
+    <ol class="steps">
+      <li><strong>After APP is armed, press <span class="key">CMD B</span>.</strong> The second autopilot only engages in approach mode.</li>
+      <li><strong>FMA must read LAND 3</strong> or LAND 2. <strong>NO AUTOLAND</strong> means fly it yourself.</li>
+      <li><strong>1,500 ft RA</strong> — FLARE arms white. <strong>50 ft</strong> — FLARE green, nose comes up. <strong>27 ft</strong> — autothrottle retards.</li>
+      <li><strong>Touchdown</strong> — ROLLOUT engages, speedbrakes fire, autobrake works. <strong>Reverse thrust is manual.</strong></li>
+      <li><strong>Disconnect at taxi speed</strong>, before turning off the runway.</li>
+    </ol>
+    <p class="soft">Needs a CAT II/III equipped runway. Not every destination has one.</p>
+
+    <h3>Manual from 500 ft</h3>
+    <ol class="steps">
+      <li>Fly the ILS on one autopilot to 500 ft.</li>
+      <li><strong>Disconnect</strong> with the yoke button. Press again to silence the warning.</li>
+      <li><strong>Leave the autothrottle in</strong> to hold your speed while you fly.</li>
+      <li><strong>At 30 ft, flare</strong> to about 5° and close the thrust levers.</li>
+      <li>Touch down, lower the nose, reverse, let the autobrake work.</li>
+    </ol>
+
+    <div class="check">
+      <div class="ttl">After Landing</div>
+      <label><input type="checkbox"><span class="txt">Speedbrake<small>Deploys itself — push forward to stow</small></span><span class="set">DOWN</span></label>
+      <label><input type="checkbox"><span class="txt">Reverse thrust<small>Stowed by 60 kt</small></span><span class="set">STOWED</span></label>
+      <label><input type="checkbox"><span class="txt">Autobrake</span><span class="set">OFF</span></label>
+      <label><input type="checkbox"><span class="txt">Flaps</span><span class="set">UP</span></label>
+      <label><input type="checkbox"><span class="txt">APU<small>Start before shutting the engines down</small></span><span class="set">ON</span></label>
+      <label><input type="checkbox"><span class="txt">Transponder</span><span class="set">STANDBY</span></label>
+      <label><input type="checkbox"><span class="txt">Landing lights and strobes</span><span class="set">OFF</span></label>
+      <label><input type="checkbox"><span class="txt">Taxi light</span><span class="set">ON</span></label>
+    </div>
+
+    <h3>Go-around</h3>
+    <p><span class="key">TO/GA</span> twice → <strong>Flaps 15</strong> → positive rate, <strong>gear up</strong> → climb to the go-around altitude and clean up.</p>
+  </section>
+
+  <!-- REFERENCE -->
+  <section>
+    <div class="eyebrow">Reference</div>
+    <h2>Panel map</h2>
+    <table class="tbl">
+      <tr><td class="m">Overhead</td><td>Electrics, APU, engine start, fuel pumps, packs and bleeds, <strong>pressurisation</strong>, anti-ice, all lights, IRS</td></tr>
+      <tr><td class="m">Glareshield</td><td><strong>MCP</strong> centre, <strong>EFIS panel</strong> at each end (BARO, MINS, ND mode and range, TERR, WXR), F/D switches, A/T ARM, master caution</td></tr>
+      <tr><td class="m">Forward panel</td><td>PFD, ND, engine displays, <strong>gear lever</strong>, <strong>autobrake</strong>, standby altimeter</td></tr>
+      <tr><td class="m">Pedestal</td><td>Throttles, <strong>flap lever</strong>, <strong>speedbrake</strong>, trim wheels, start levers, CDU, radios, transponder, weather radar</td></tr>
+      <tr><td class="m">Sidewall</td><td>Tablet, left of the captain's seat</td></tr>
+    </table>
+
+    <h2>Altimeter, in one table</h2>
+    <table class="tbl" id="altTable"></table>
+
+    <h2>Reading the FMA</h2>
+    <table class="tbl">
+      <tr><th>Shows</th><th>Means</th></tr>
+      <tr><td><span class="fma-tag">N1</span></td><td>Autothrottle on takeoff or climb thrust</td></tr>
+      <tr><td><span class="fma-tag">SPD</span></td><td>Autothrottle holding a speed</td></tr>
+      <tr><td><span class="fma-tag">LNAV</span></td><td>Following the FMC route</td></tr>
+      <tr><td><span class="fma-tag">VNAV PTH</span></td><td>On the computed vertical path</td></tr>
+      <tr><td><span class="fma-tag">VNAV SPD</span></td><td>Holding speed by pitching</td></tr>
+      <tr><td><span class="fma-tag">ALT</span></td><td>Levelled at the MCP altitude — wind the knob</td></tr>
+      <tr><td><span class="fma-tag w">VOR/LOC</span> white</td><td>Localiser armed</td></tr>
+      <tr><td><span class="fma-tag">VOR/LOC</span> green</td><td>Tracking the centreline</td></tr>
+      <tr><td><span class="fma-tag w">G/S</span> white</td><td>Glideslope armed</td></tr>
+      <tr><td><span class="fma-tag">G/S</span> green</td><td>On the glideslope</td></tr>
+      <tr><td><span class="fma-tag">LAND 3</span></td><td>Autoland available</td></tr>
+      <tr><td><span class="fma-tag">NO AUTOLAND</span></td><td>Fly it yourself</td></tr>
+    </table>
+
+    <h2>When it goes wrong</h2>
+    <table class="tbl">
+      <tr><th>Symptom</th><th>Cause</th></tr>
+      <tr><td>Route red in the list</td><td>Detailed Navlog not ticked. Regenerate.</td></tr>
+      <tr><td>Nothing downloads</td><td>Pilot ID entered instead of username, or no OFP generated this session.</td></tr>
+      <tr><td>UNABLE CRZ ALT</td><td>Cruise level too high for the distance and weight. Lower it.</td></tr>
+      <tr><td>VNAV dropped out</td><td>Almost always downstream of UNABLE CRZ ALT. Fix the cruise level, then re-engage.</td></tr>
+      <tr><td>Won't climb past a level</td><td>MCP altitude window, or a SID constraint on the LEGS page.</td></tr>
+      <tr><td>Won't descend</td><td>MCP altitude not wound down, or VNAV not engaged. Check TO T/D hasn't become TO E/O.</td></tr>
+      <tr><td>Flew over the runway</td><td>Glideslope never captured. You were above it, or APP was pressed too late.</td></tr>
+      <tr><td>V-speeds blank</td><td>Flaps and CG not entered on TAKEOFF REF.</td></tr>
+      <tr><td>TO/GA does nothing</td><td>A/T ARM switch is down.</td></tr>
+      <tr><td>Absurdly heavy</td><td>Fuel loaded via both the tablet and the MSFS menu.</td></tr>
+    </table>
+  </section>
+
+  <section>
+    <div class="eyebrow">Reference</div>
+    <h2>The words</h2>
+    <table class="tbl">
+      <tr><td class="m">CDU</td><td>The keypad-and-screen box on the pedestal. <strong>FMC</strong> is the computer behind it — people use both words for the same thing.</td></tr>
+      <tr><td class="m">LSK</td><td>Line Select Key. Six buttons down each side of the CDU screen, numbered <strong>1L–6L</strong> and <strong>1R–6R</strong> from the top. Unlabelled — they do whatever the line beside them says.</td></tr>
+      <tr><td class="m">Scratchpad</td><td>The bottom line of the CDU screen. Everything you type lands there first, then you press an LSK to put it into a field. <strong>Type it, then place it.</strong></td></tr>
+      <tr><td class="m">Small vs large font</td><td>Small is the computer's suggestion, large is confirmed. Some things — V-speeds especially — don't apply until you press the LSK to promote them.</td></tr>
+      <tr><td class="m">EXEC</td><td>Commits pending changes. If the light is on, something isn't live yet. Press it.</td></tr>
+      <tr><td class="m">VIA / TO</td><td>VIA is the airway, TO is where you leave it. The SimBrief uplink fills both in — you never type these.</td></tr>
+      <tr><td class="m">SID</td><td>Standard Instrument Departure — a published route out of an airport.</td></tr>
+      <tr><td class="m">STAR</td><td>Standard Terminal Arrival Route — the same thing arriving.</td></tr>
+      <tr><td class="m">OFP</td><td>Operational Flight Plan. The document SimBrief generates.</td></tr>
+      <tr><td class="m">ICAO code</td><td>The four-letter airport code (EGSS). Different from the three-letter one on a boarding pass (STN).</td></tr>
+      <tr><td class="m">ZFW</td><td>Zero Fuel Weight — aircraft plus passengers plus bags, before fuel. <strong>EZFW</strong> is SimBrief's estimate; they won't match and that's normal. Use the actual.</td></tr>
+      <tr><td class="m">V1</td><td>Decision speed. Below it you stop, above it you go. Hand comes off the thrust levers.</td></tr>
+      <tr><td class="m">VR</td><td>Rotate. Pull back to about 15° nose up.</td></tr>
+      <tr><td class="m">V2</td><td>Takeoff safety speed — guarantees a climb on one engine. You'll exceed it easily on two.</td></tr>
+      <tr><td class="m">VREF</td><td>Landing reference speed for a given flap setting. Fly VREF+5 on final.</td></tr>
+      <tr><td class="m">N1</td><td>Fan speed as a percentage — the closest thing to a direct thrust reading. <strong>N2</strong> is the core; that's what you watch to 25% on start.</td></tr>
+      <tr><td class="m">QNH</td><td>Local pressure setting, the <strong>Q</strong> number on a METAR. Set it and your altimeter reads height above sea level.</td></tr>
+    </table>
+  </section>
+
+  <section>
+    <div class="eyebrow">Reference</div>
+    <h2>Setting up the displays</h2>
+    <p>All of this is on the <strong>EFIS control panel</strong> <span class="where">Glareshield</span> — the same one with the BARO and MINS knobs.</p>
+    <table class="tbl">
+      <tr><th>Control</th><th>Set to</th></tr>
+      <tr><td class="m">ND mode</td><td><strong>MAP</strong> for the whole flight. <strong>PLN</strong> briefly to check the route north-up before departure.</td></tr>
+      <tr><td class="m">Range</td><td>40 nm on the ground and in the climb · 160–320 in the cruise · 10–20 on the approach</td></tr>
+      <tr><td class="m">ARPT</td><td>On. Useful if you ever need somewhere to go.</td></tr>
+      <tr><td class="m">WPT / STA / DATA / POS</td><td>Off by default — they clutter fast. Add WPT or STA when you actually need them.</td></tr>
+      <tr><td class="m">TERR</td><td>On for departure and approach. Paints the ground green/amber/red relative to your altitude.</td></tr>
+      <tr><td class="m">WXR</td><td>On if there's weather about. Precipitation in green/yellow/red.</td></tr>
+    </table>
+    <div class="note">
+      <span class="lbl">Two things worth knowing</span>
+      <strong>TERR and WXR share the display</strong> — you can't have both. Terrain wins, by design.
+      And the weather radar has a separate control panel on the pedestal with a <strong>tilt</strong>
+      control: aimed too high you see nothing, too low and the screen fills with ground return.
+      A few degrees down in the cruise.
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow">Reference</div>
+    <h2>Camera views on Xbox</h2>
+    <p>The CDU is unusable from the default seat position. Build these once and they're saved per aircraft.</p>
+    <ol class="steps">
+      <li><strong>Bind the commands.</strong> Options → Controls → Xbox Controller (duplicate the preset first if it's locked) → filter for <strong>custom camera</strong>. Bind <em>Load Custom Camera 1–4</em> to LB + D-pad, and <em>Save Custom Camera 1–4</em> to something awkward like RB + D-pad.</li>
+      <li><strong>Bind cockpit translate.</strong> Filter the <strong>Camera (Cockpit)</strong> category for <em>Translate</em>. Looking turns your head; translating slides it. Without this you can never get square-on to a panel. Bind the axis versions if you have a spare hat — much smoother than stepping.</li>
+      <li><strong>Also bind Reset Cockpit View.</strong> You'll wander off somewhere daft and want to snap back.</li>
+      <li><strong>Save four views:</strong> CDU · MCP and PFD · overhead · throttle quadrant. Add the EFIS panel and the tablet if you have slots spare.</li>
+      <li><strong>Must be in the normal cockpit camera</strong> to save — not drone, showcase or external.</li>
+      <li><strong>Test them on approach</strong>, not just parked. A view that's fine on stand can hide something you need in flight.</li>
+    </ol>
+    <p class="soft">Quickviews on the D-pad already exist by default — eight fixed directions from the pilot seat. Useful for glancing, but they won't zoom you onto the CDU.</p>
+  </section>
+
+  <section>
+    <div class="eyebrow">Reference</div>
+    <h2>Callsign and registration</h2>
+    <table class="tbl">
+      <tr><th>Identifier</th><th>Format</th><th>Where it goes</th></tr>
+      <tr><td class="m">Registration<br>(tail number)</td><td>Ryanair <strong>EI-</strong> + three letters (EI-DWX, EI-EBK, EI-FTZ). Jet2 <strong>G-</strong> + four (G-JZBA, G-GDFC).</td><td>MSFS aircraft selection, alongside the livery</td></tr>
+      <tr><td class="m">Callsign</td><td>Ryanair <strong>RYR</strong> + three digits and two letters — RYR14RE, RYR47MK. Spoken "Ryanair one four romeo echo". Jet2 uses <strong>EXS</strong>, spoken "Channex".</td><td>Flight setup, ATC identity</td></tr>
+      <tr><td class="m">Flight number</td><td>Ryanair <strong>FR</strong> + digits. Jet2 <strong>LS</strong> + digits.</td><td>FMC RTE page, FLT NO at 2R</td></tr>
+    </table>
+    <div class="note">
+      <span class="lbl">If ATC is reading out something enormous</span>
+      You've set both a callsign and a flight number and it's saying both. Clear one.
+      Real ATC only ever uses the callsign — the flight number is for passengers and paperwork.
+      <strong>FlightRadar24</strong> is the easy way to get a genuine one: look up the route,
+      copy the callsign, registration and the cruise level they actually use.
+    </div>
+  </section>
+
+  <footer>
+    <p><strong>Distances are great-circle</strong> — your SimBrief route will be slightly longer because airways don't fly straight. Use it for the descent maths, not for fuel.</p>
+    <p><strong>Runway headings are derived from the designator</strong> and accurate to a few degrees. Read the exact ILS course off the ND or the approach chart once the approach is loaded.</p>
+    <p><strong>Transition altitudes vary by country and airport.</strong> Where one isn't shown, read it off the ATIS or the chart.</p>
+    <p><strong>SIDs, STARs, ILS frequencies and gates aren't listed here</strong> — they change every AIRAC cycle. SimBrief gives you the procedure names; the FMC and the ND give you the frequencies.</p>
+  </footer>
+
+</div>
+
+<script>
+const AP = {
+ EGSS:{n:"London Stansted",c:"United Kingdom",lat:51.885,lon:0.235,e:348,ta:6000,r:["04","22"]},
+ EGGW:{n:"London Luton",c:"United Kingdom",lat:51.874,lon:-0.368,e:526,ta:6000,r:["07","25"]},
+ EIDW:{n:"Dublin",c:"Ireland",lat:53.421,lon:-6.270,e:242,ta:5000,r:["10L","28R","10R","28L","16","34"]},
+ EINN:{n:"Shannon",c:"Ireland",lat:52.702,lon:-8.925,e:46,ta:5000,r:["06","24"]},
+ EICK:{n:"Cork",c:"Ireland",lat:51.841,lon:-8.491,e:502,ta:5000,r:["07","25","16","34"]},
+ EIKN:{n:"Ireland West Knock",c:"Ireland",lat:53.910,lon:-8.819,e:665,ta:5000,r:["09","27"]},
+ EIKY:{n:"Kerry",c:"Ireland",lat:52.181,lon:-9.524,e:112,ta:5000,r:["08","26"]},
+ LEMG:{n:"Málaga",c:"Spain",lat:36.675,lon:-4.499,e:53,r:["12","30","13","31"]},
+ LEAL:{n:"Alicante",c:"Spain",lat:38.282,lon:-0.558,e:141,r:["10","28"]},
+ LEBL:{n:"Barcelona El Prat",c:"Spain",lat:41.297,lon:2.078,e:12,r:["06L","24R","06R","24L","02","20"]},
+ LEGE:{n:"Girona",c:"Spain",lat:41.901,lon:2.761,e:468,r:["02","20"]},
+ LERS:{n:"Reus",c:"Spain",lat:41.147,lon:1.167,e:233,r:["07","25"]},
+ LEMD:{n:"Madrid Barajas",c:"Spain",lat:40.472,lon:-3.561,e:2001,r:["14L","32R","14R","32L","18L","36R","18R","36L"]},
+ LEPA:{n:"Palma de Mallorca",c:"Spain",lat:39.552,lon:2.739,e:27,r:["06L","24R","06R","24L"]},
+ LEIB:{n:"Ibiza",c:"Spain",lat:38.873,lon:1.373,e:22,r:["06","24"]},
+ LEZL:{n:"Seville",c:"Spain",lat:37.418,lon:-5.899,e:112,r:["09","27"]},
+ LEVC:{n:"Valencia",c:"Spain",lat:39.489,lon:-0.482,e:240,r:["12","30","04","22"]},
+ LEMI:{n:"Murcia Corvera",c:"Spain",lat:37.803,lon:-1.125,e:656,r:["05","23"]},
+ LEST:{n:"Santiago de Compostela",c:"Spain",lat:42.896,lon:-8.415,e:1213,r:["17","35"]},
+ LEBB:{n:"Bilbao",c:"Spain",lat:43.301,lon:-2.911,e:138,r:["12","30","10","28"]},
+ GCTS:{n:"Tenerife South",c:"Canary Islands",lat:28.044,lon:-16.572,e:209,r:["07","25"]},
+ GCXO:{n:"Tenerife North",c:"Canary Islands",lat:28.483,lon:-16.341,e:2076,r:["12","30"]},
+ GCRR:{n:"Lanzarote",c:"Canary Islands",lat:28.945,lon:-13.605,e:46,r:["03","21"]},
+ GCFV:{n:"Fuerteventura",c:"Canary Islands",lat:28.453,lon:-13.864,e:85,r:["01","19"]},
+ GCLP:{n:"Gran Canaria",c:"Canary Islands",lat:27.932,lon:-15.387,e:78,r:["03L","21R","03R","21L"]},
+ LPFR:{n:"Faro",c:"Portugal",lat:37.014,lon:-7.966,e:24,r:["10","28"]},
+ LPPT:{n:"Lisbon",c:"Portugal",lat:38.774,lon:-9.134,e:374,r:["02","20","17","35"]},
+ LPPR:{n:"Porto",c:"Portugal",lat:41.248,lon:-8.681,e:228,r:["17","35"]},
+ LPMA:{n:"Madeira Funchal",c:"Portugal",lat:32.694,lon:-16.778,e:192,r:["05","23"]},
+ LIME:{n:"Milan Bergamo",c:"Italy",lat:45.674,lon:9.704,e:782,r:["10","28"]},
+ LIMC:{n:"Milan Malpensa",c:"Italy",lat:45.630,lon:8.728,e:768,r:["17L","35R","17R","35L"]},
+ LIRA:{n:"Rome Ciampino",c:"Italy",lat:41.799,lon:12.595,e:427,r:["15","33"]},
+ LIRF:{n:"Rome Fiumicino",c:"Italy",lat:41.800,lon:12.239,e:15,r:["16L","34R","16R","34L","07","25"]},
+ LIRP:{n:"Pisa",c:"Italy",lat:43.684,lon:10.393,e:6,r:["04L","22R","04R","22L"]},
+ LIRN:{n:"Naples",c:"Italy",lat:40.886,lon:14.291,e:294,r:["06","24"]},
+ LIPH:{n:"Venice Treviso",c:"Italy",lat:45.648,lon:12.194,e:59,r:["07","25"]},
+ LIPZ:{n:"Venice Marco Polo",c:"Italy",lat:45.505,lon:12.352,e:7,r:["04L","22R","04R","22L"]},
+ LIPE:{n:"Bologna",c:"Italy",lat:44.531,lon:11.297,e:123,r:["12","30"]},
+ LIPX:{n:"Verona",c:"Italy",lat:45.396,lon:10.888,e:239,r:["04","22"]},
+ LICC:{n:"Catania",c:"Italy",lat:37.467,lon:15.066,e:39,r:["08","26"]},
+ LICJ:{n:"Palermo",c:"Italy",lat:38.176,lon:13.091,e:65,r:["07","25","02","20"]},
+ LIBD:{n:"Bari",c:"Italy",lat:41.139,lon:16.760,e:177,r:["07","25"]},
+ LIBR:{n:"Brindisi",c:"Italy",lat:40.658,lon:17.947,e:47,r:["05","23"]},
+ LIEE:{n:"Cagliari",c:"Italy",lat:39.251,lon:9.054,e:13,r:["14","32"]},
+ LIEA:{n:"Alghero",c:"Italy",lat:40.632,lon:8.291,e:87,r:["02","20"]},
+ LIPQ:{n:"Trieste",c:"Italy",lat:45.827,lon:13.472,e:39,r:["09","27"]},
+ EDDB:{n:"Berlin Brandenburg",c:"Germany",lat:52.362,lon:13.501,e:157,ta:5000,r:["07L","25R","07R","25L"]},
+ EDDK:{n:"Cologne Bonn",c:"Germany",lat:50.866,lon:7.143,e:302,ta:5000,r:["14L","32R","14R","32L","06","24"]},
+ EDDH:{n:"Hamburg",c:"Germany",lat:53.630,lon:9.988,e:53,ta:5000,r:["05","23","15","33"]},
+ EDFH:{n:"Frankfurt Hahn",c:"Germany",lat:49.949,lon:7.264,e:1649,ta:5000,r:["03","21"]},
+ EDJA:{n:"Memmingen",c:"Germany",lat:47.989,lon:10.240,e:2077,ta:5000,r:["06","24"]},
+ EDDW:{n:"Bremen",c:"Germany",lat:53.047,lon:8.787,e:14,ta:5000,r:["09","27"]},
+ LOWW:{n:"Vienna",c:"Austria",lat:48.110,lon:16.570,e:600,r:["11","29","16","34"]},
+ LOWS:{n:"Salzburg",c:"Austria",lat:47.793,lon:13.004,e:1411,r:["15","33"]},
+ LOWI:{n:"Innsbruck",c:"Austria",lat:47.260,lon:11.344,e:1907,r:["08","26"]},
+ LHBP:{n:"Budapest",c:"Hungary",lat:47.437,lon:19.256,e:495,r:["13L","31R","13R","31L"]},
+ LKPR:{n:"Prague",c:"Czechia",lat:50.101,lon:14.260,e:1247,r:["06","24","12","30"]},
+ EPKK:{n:"Kraków",c:"Poland",lat:50.078,lon:19.785,e:791,ta:6500,r:["07","25"]},
+ EPMO:{n:"Warsaw Modlin",c:"Poland",lat:52.451,lon:20.652,e:344,ta:6500,r:["08","26"]},
+ EPGD:{n:"Gdańsk",c:"Poland",lat:54.378,lon:18.466,e:489,ta:6500,r:["11","29"]},
+ EPWR:{n:"Wrocław",c:"Poland",lat:51.103,lon:16.886,e:404,ta:6500,r:["11","29"]},
+ EPPO:{n:"Poznań",c:"Poland",lat:52.421,lon:16.826,e:308,ta:6500,r:["10","28"]},
+ EPKT:{n:"Katowice",c:"Poland",lat:50.474,lon:19.080,e:995,ta:6500,r:["09","27"]},
+ EPRZ:{n:"Rzeszów",c:"Poland",lat:50.110,lon:22.019,e:675,ta:6500,r:["09","27"]},
+ LROP:{n:"Bucharest Otopeni",c:"Romania",lat:44.572,lon:26.102,e:314,r:["08L","26R","08R","26L"]},
+ LRCL:{n:"Cluj-Napoca",c:"Romania",lat:46.785,lon:23.686,e:1039,r:["07","25"]},
+ LBSF:{n:"Sofia",c:"Bulgaria",lat:42.696,lon:23.411,e:1742,r:["09","27"]},
+ EVRA:{n:"Riga",c:"Latvia",lat:56.924,lon:23.971,e:36,r:["18","36"]},
+ EYVI:{n:"Vilnius",c:"Lithuania",lat:54.634,lon:25.286,e:646,r:["02","20"]},
+ EYKA:{n:"Kaunas",c:"Lithuania",lat:54.964,lon:24.085,e:256,r:["08","26"]},
+ EETN:{n:"Tallinn",c:"Estonia",lat:59.413,lon:24.833,e:131,r:["08","26"]},
+ EKCH:{n:"Copenhagen",c:"Denmark",lat:55.618,lon:12.656,e:17,r:["04L","22R","04R","22L","12","30"]},
+ EKBI:{n:"Billund",c:"Denmark",lat:55.740,lon:9.152,e:247,r:["09","27"]},
+ ESGG:{n:"Gothenburg Landvetter",c:"Sweden",lat:57.663,lon:12.280,e:506,r:["03","21"]},
+ ESKN:{n:"Stockholm Skavsta",c:"Sweden",lat:58.788,lon:16.912,e:140,r:["08","26","15","33"]},
+ ENTO:{n:"Sandefjord Torp",c:"Norway",lat:59.187,lon:10.259,e:302,r:["18","36"]},
+ ENBR:{n:"Bergen Flesland",c:"Norway",lat:60.293,lon:5.218,e:170,r:["17","35"]},
+ EFHK:{n:"Helsinki Vantaa",c:"Finland",lat:60.317,lon:24.963,e:179,r:["04L","22R","04R","22L","15","33"]},
+ LDZA:{n:"Zagreb",c:"Croatia",lat:45.743,lon:16.069,e:353,r:["05","23"]},
+ LDSP:{n:"Split",c:"Croatia",lat:43.539,lon:16.298,e:79,r:["05","23"]},
+ LDDU:{n:"Dubrovnik",c:"Croatia",lat:42.561,lon:18.268,e:527,r:["12","30"]},
+ LJLJ:{n:"Ljubljana",c:"Slovenia",lat:46.224,lon:14.458,e:1273,r:["12","30"]},
+ LGAV:{n:"Athens",c:"Greece",lat:37.936,lon:23.947,e:308,r:["03L","21R","03R","21L"]},
+ LGTS:{n:"Thessaloniki",c:"Greece",lat:40.520,lon:22.971,e:22,r:["10","28","16","34"]},
+ LGRP:{n:"Rhodes",c:"Greece",lat:36.405,lon:28.086,e:17,r:["07","25"]},
+ LGKR:{n:"Corfu",c:"Greece",lat:39.602,lon:19.912,e:6,r:["17","35"]},
+ LGSA:{n:"Chania Crete",c:"Greece",lat:35.532,lon:24.150,e:490,r:["11","29"]},
+ LGIR:{n:"Heraklion Crete",c:"Greece",lat:35.340,lon:25.180,e:115,r:["09","27"]},
+ LGZA:{n:"Zakynthos",c:"Greece",lat:37.751,lon:20.884,e:15,r:["16","34"]},
+ LGKF:{n:"Kefalonia",c:"Greece",lat:38.120,lon:20.505,e:59,r:["08","26"]},
+ LGSR:{n:"Santorini",c:"Greece",lat:36.399,lon:25.479,e:117,r:["16","34"]},
+ LGMK:{n:"Mykonos",c:"Greece",lat:37.435,lon:25.348,e:405,r:["16","34"]},
+ LMML:{n:"Malta",c:"Malta",lat:35.857,lon:14.478,e:300,r:["13","31","05","23"]},
+ LCPH:{n:"Paphos",c:"Cyprus",lat:34.718,lon:32.486,e:42,r:["11","29"]},
+ LCLK:{n:"Larnaca",c:"Cyprus",lat:34.875,lon:33.625,e:8,r:["04","22"]},
+ GMMX:{n:"Marrakech",c:"Morocco",lat:31.607,lon:-8.036,e:1545,r:["10","28"]},
+ GMAD:{n:"Agadir",c:"Morocco",lat:30.325,lon:-9.413,e:250,r:["10","28"]},
+ GMFF:{n:"Fez",c:"Morocco",lat:33.927,lon:-4.978,e:1900,r:["09","27"]},
+ GMTT:{n:"Tangier",c:"Morocco",lat:35.727,lon:-5.917,e:62,r:["10","28"]},
+ LFBO:{n:"Toulouse",c:"France",lat:43.629,lon:1.364,e:499,r:["14L","32R","14R","32L"]},
+ LFBD:{n:"Bordeaux",c:"France",lat:44.828,lon:-0.715,e:162,r:["05","23","11","29"]},
+ LFML:{n:"Marseille",c:"France",lat:43.436,lon:5.215,e:74,r:["13L","31R","13R","31L"]},
+ LFMN:{n:"Nice",c:"France",lat:43.665,lon:7.215,e:12,r:["04L","22R","04R","22L"]},
+ LFMK:{n:"Carcassonne",c:"France",lat:43.216,lon:2.306,e:433,r:["10","28"]},
+ LFRS:{n:"Nantes",c:"France",lat:47.157,lon:-1.611,e:90,r:["03","21"]},
+ LFLB:{n:"Chambéry",c:"France",lat:45.638,lon:5.880,e:779,r:["18","36"]},
+ LFLS:{n:"Grenoble",c:"France",lat:45.363,lon:5.329,e:1302,r:["09","27"]},
+ EBCI:{n:"Brussels Charleroi",c:"Belgium",lat:50.459,lon:4.454,e:614,r:["06","24"]},
+ EHEH:{n:"Eindhoven",c:"Netherlands",lat:51.450,lon:5.375,e:74,ta:3000,r:["03","21"]},
+ EHBK:{n:"Maastricht",c:"Netherlands",lat:50.912,lon:5.771,e:375,ta:3000,r:["03","21"]},
+ LFSB:{n:"Basel Mulhouse",c:"Switzerland",lat:47.590,lon:7.529,e:885,r:["15","33","08","26"]},
+ LSGG:{n:"Geneva",c:"Switzerland",lat:46.238,lon:6.109,e:1411,r:["04","22"]},
+ LSZH:{n:"Zurich",c:"Switzerland",lat:47.458,lon:8.548,e:1416,r:["14","32","16","34","10","28"]}
+};
+
+const R2D=180/Math.PI, D2R=Math.PI/180;
+function gc(a,b){
+  const p1=a.lat*D2R,p2=b.lat*D2R,dp=(b.lat-a.lat)*D2R,dl=(b.lon-a.lon)*D2R;
+  const h=Math.sin(dp/2)**2+Math.cos(p1)*Math.cos(p2)*Math.sin(dl/2)**2;
+  return 2*6371*Math.asin(Math.sqrt(h))/1.852;
+}
+function brg(a,b){
+  const p1=a.lat*D2R,p2=b.lat*D2R,dl=(b.lon-a.lon)*D2R;
+  const y=Math.sin(dl)*Math.cos(p2);
+  const x=Math.cos(p1)*Math.sin(p2)-Math.sin(p1)*Math.cos(p2)*Math.cos(dl);
+  return (Math.atan2(y,x)*R2D+360)%360;
+}
+function rwyHdg(d){return parseInt(d,10)*10;}
+function parseWind(s){
+  if(!s) return null;
+  const m=s.trim().match(/^(\d{1,3})\s*[\/@ ]?\s*(\d{1,3})$/);
+  if(!m) return null;
+  const d=+m[1], k=+m[2];
+  if(d>360) return null;
+  return {d:d%360,k};
+}
+function comp(rh,w){
+  const a=(rh-w.d)*D2R;
+  return {hw:Math.cos(a)*w.k, xw:Math.sin(a)*w.k};
+}
+function recFL(nm,track){
+  let base;
+  if(nm<180) base=240; else if(nm<280) base=280; else if(nm<420) base=300;
+  else if(nm<650) base=340; else base=360;
+  const wantOdd = track<180;
+  let fl=base;
+  if(((fl/10)%2===1)!==wantOdd) fl-=10;
+  return Math.max(200,fl);
+}
+function fmtFL(f){return "FL"+f;}
+
+function buildSelects(){
+  const keys=Object.keys(AP).sort((a,b)=>AP[a].n.localeCompare(AP[b].n));
+  const mk=(el,sel)=>{
+    el.innerHTML="";
+    keys.forEach(k=>{
+      const o=document.createElement("option");
+      o.value=k; o.textContent=AP[k].n+"  ("+k+")";
+      if(k===sel)o.selected=true;
+      el.appendChild(o);
+    });
+  };
+  mk(document.getElementById("dep"),"EGSS");
+  mk(document.getElementById("arr"),"EIDW");
+}
+
+function rwyTable(icao,windStr){
+  const a=AP[icao], w=parseWind(windStr);
+  let best=-999,bestI=-1;
+  const rows=a.r.map((d,i)=>{
+    const h=rwyHdg(d);
+    let hw=null,xw=null;
+    if(w){const c=comp(h,w);hw=c.hw;xw=c.xw;if(hw>best){best=hw;bestI=i;}}
+    return {d,h,hw,xw};
+  });
+  let html="<tr><th>Runway</th><th>Heading</th><th>Headwind</th><th>Crosswind</th></tr>";
+  rows.forEach((r,i)=>{
+    const cls=(i===bestI&&w)?' class="best"':'';
+    html+=`<tr${cls}><td class="m"><strong>${r.d}</strong></td><td class="m">${String(r.h).padStart(3,"0")}°</td>`;
+    if(w){
+      html+=`<td class="m">${r.hw>=0?"+":""}${r.hw.toFixed(0)} kt${i===bestI?" ← best":""}</td>`;
+      html+=`<td class="m">${Math.abs(r.xw).toFixed(0)} kt</td>`;
+    } else {
+      html+=`<td class="m soft">enter wind</td><td class="m soft">—</td>`;
+    }
+    html+="</tr>";
+  });
+  return html;
+}
+
+function desTable(fl){
+  const alt=fl*100;
+  const lbl=v=>v>=10000?"FL"+Math.round(v/100):Math.round(v).toLocaleString()+" ft";
+  const rows=[];
+  rows.push({nm:Math.round(fl/10*3)+10, v:alt, note:"<strong>Top of descent — start down here.</strong> If VNAV hasn't, use LVL CHG."});
+  [0.75,0.5].forEach(f=>{
+    const v=Math.round(alt*f/1000)*1000;
+    if(v>12000) rows.push({nm:Math.round(v/1000*3)+10, v, note:"Checkpoint — if you're above this, speedbrake now"});
+  });
+  rows.push({nm:40, v:10000, note:"Landing lights on · slow to 250"});
+  rows.push({nm:25, v:6000,  note:"Transition level around here — set the destination QNH"});
+  rows.push({nm:15, v:3000,  note:"<strong>Level. At or below the glideslope. Press APP.</strong>", best:true});
+  let html="<tr><th>Distance to go</th><th>Should be at</th><th>Notes</th></tr>";
+  rows.filter(r=>r.nm>0).forEach(r=>{
+    html+=`<tr${r.best?' class="best"':''}><td class="m">${r.nm} nm</td><td class="m">${lbl(r.v)}</td><td>${r.note}</td></tr>`;
+  });
+  return html;
+}
+
+function update(){
+  const dk=document.getElementById("dep").value;
+  const ak=document.getElementById("arr").value;
+  const d=AP[dk], a=AP[ak];
+  const nm=Math.round(gc(d,a));
+  const tr=Math.round(brg(d,a));
+  const fl=recFL(nm,tr);
+  const mins=Math.round(nm/450*60+25);
+
+  document.getElementById("hDep").textContent=dk;
+  document.getElementById("hArr").textContent=ak;
+  document.getElementById("hMeta").innerHTML=`${nm} nm · ${fmtFL(fl)}<br>${Math.floor(mins/60)}h ${String(mins%60).padStart(2,"0")}m`;
+
+  document.getElementById("rTitle").textContent=d.n+" → "+a.n;
+  document.getElementById("rFacts").innerHTML=`
+    <div class="fact"><dt>Distance</dt><dd>${nm}<small>nm great-circle</small></dd></div>
+    <div class="fact"><dt>Track</dt><dd>${String(tr).padStart(3,"0")}°<small>initial</small></dd></div>
+    <div class="fact"><dt>Cruise</dt><dd>${fmtFL(fl)}<small>${tr<180?"odd levels eastbound":"even levels westbound"}</small></dd></div>
+    <div class="fact"><dt>Block</dt><dd>${Math.floor(mins/60)}:${String(mins%60).padStart(2,"0")}<small>rough estimate</small></dd></div>`;
+  document.getElementById("rNote").innerHTML=
+    `Track ${String(tr).padStart(3,"0")}° means the semicircular rule gives you <strong>${tr<180?"odd":"even"}</strong> flight levels. `+
+    `${fmtFL(fl)} is a realistic level for ${nm} nm in a 737-800 — take SimBrief's suggestion if it's close, but `+
+    `lower it rather than raise it. Too high on a short sector is what produces <strong>UNABLE CRZ ALT</strong>.`;
+
+  document.getElementById("depRwyH").textContent=d.n+" — departure";
+  document.getElementById("arrRwyH").textContent=a.n+" — arrival";
+  document.getElementById("depRwyT").innerHTML=rwyTable(dk,document.getElementById("wdep").value);
+  document.getElementById("arrRwyT").innerHTML=rwyTable(ak,document.getElementById("warr").value);
+
+  document.getElementById("mtIcao").textContent=ak;
+  document.getElementById("sbRoute").textContent=dk+" → "+ak;
+  document.getElementById("sbFL").textContent=fmtFL(fl);
+  document.getElementById("fmcDep").textContent=dk;
+  document.getElementById("fmcArr").textContent=ak;
+  document.getElementById("legChk").textContent=nm+" nm";
+  document.getElementById("perfFL").textContent=fmtFL(fl)+" / "+(fl*100);
+  document.getElementById("depElev").textContent=d.e+" ft";
+  document.getElementById("ckAlt").textContent=`Both EFIS + standby, departure QNH. Reads about ${d.e} ft on stand.`;
+  document.getElementById("pressFL").textContent=(fl*100);
+  document.getElementById("pressLand").textContent=Math.round(a.e/50)*50;
+  document.getElementById("minsVal").textContent=Math.round((a.e+200)/10)*10;
+  document.getElementById("climbTo").textContent=(fl*100);
+  document.getElementById("d31FL").textContent=fmtFL(fl);
+  document.getElementById("d31NM").textContent=(Math.round(fl/10*3)+10)+" nm";
+  document.getElementById("desTable").innerHTML=desTable(fl);
+
+  // runway-derived course guesses
+  const w=parseWind(document.getElementById("warr").value);
+  let crs=null;
+  if(w){
+    let best=-999;
+    a.r.forEach(rr=>{const h=rwyHdg(rr);const c=comp(h,w);if(c.hw>best){best=c.hw;crs=h;}});
+  }
+  document.getElementById("mcpCrs").textContent=crs!==null?String(crs).padStart(3,"0"):"---";
+  document.getElementById("appCrs").textContent=crs!==null?String(crs).padStart(3,"0")+"°":"the runway inbound course";
+  const dw=parseWind(document.getElementById("wdep").value);
+  let dh=null;
+  if(dw){let best=-999;d.r.forEach(rr=>{const h=rwyHdg(rr);const c=comp(h,dw);if(c.hw>best){best=c.hw;dh=h;}});}
+  document.getElementById("mcpHdg").textContent=dh!==null?String(dh).padStart(3,"0"):"---";
+
+  document.getElementById("depTA").textContent = d.ta ? d.ta.toLocaleString()+" ft" : "read it off the ATIS";
+  document.getElementById("altTable").innerHTML=`
+    <tr><th>When</th><th>Set</th><th>From</th></tr>
+    <tr><td>On stand at ${dk}</td><td class="m">Departure QNH</td><td>Q number on the ${dk} METAR or ATIS</td></tr>
+    <tr><td>Climbing through ${d.ta?d.ta.toLocaleString()+" ft":"the transition altitude"}</td><td class="m">STD (1013)</td><td>Press the STD button — no number needed</td></tr>
+    <tr><td>Descending through the transition level</td><td class="m">Destination QNH</td><td>Q number on the ${ak} METAR or ATIS</td></tr>`;
+}
+
+buildSelects();
+["dep","arr","wdep","warr"].forEach(id=>{
+  document.getElementById(id).addEventListener("input",update);
+  document.getElementById(id).addEventListener("change",update);
+});
+update();
+</script>
+</body>
+</html>
